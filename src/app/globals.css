@@ -1,0 +1,68 @@
+@import "tailwindcss";
+
+:root {
+  --background: #0a0f1a;
+  --foreground: #e2e8f0;
+
+  /* Scenario tint colors (RGB triplets for use with rgba()) */
+  --scenario-healthcare: 59, 130, 246;
+  --scenario-education: 245, 158, 11;
+  --scenario-security: 239, 68, 68;
+
+  /* Animation timing */
+  --anim-face-transition: 0.6s;
+  --anim-blink: 0.14s;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+
+  /* Expose scenario colors as Tailwind custom properties */
+  --color-scenario-healthcare: rgb(var(--scenario-healthcare));
+  --color-scenario-education: rgb(var(--scenario-education));
+  --color-scenario-security: rgb(var(--scenario-security));
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans, Arial, Helvetica, sans-serif);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Custom scrollbar styles */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(71 85 105) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 4px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background-color: rgb(71 85 105);
+  border-radius: 9999px;
+}
+
+/* Range input base styles */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 6px;
+  border-radius: 9999px;
+  outline: none;
+  cursor: pointer;
+}
+
+input[type="range"]:focus {
+  outline: none;
+}
