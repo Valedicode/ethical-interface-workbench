@@ -8,6 +8,7 @@ import FaceCanvas from '@/components/face/FaceCanvas';
 import ControlPanel from '@/components/controls/ControlPanel';
 import ScenarioSelector from '@/components/scenarios/ScenarioSelector';
 import ScenarioAnalysis from '@/components/scenarios/ScenarioAnalysis';
+import InteractionScenes from '@/components/scenarios/InteractionScenes';
 import type { ScenarioId } from '@/lib/types';
 
 export default function Dashboard() {
@@ -18,9 +19,12 @@ export default function Dashboard() {
     isDark,
     isBlinking,
     gazeOffset,
+    eventPhase,
+    activeEventId,
     setSlider,
     loadPreset,
     toggleDark,
+    triggerEvent,
   } = useFaceState();
 
   function handleScenarioSelect(id: ScenarioId) {
@@ -36,7 +40,7 @@ export default function Dashboard() {
 
   return (
     <div
-      className={`min-h-screen flex flex-col transition-colors duration-700 ${
+      className={`h-screen overflow-hidden flex flex-col transition-colors duration-700 ${
         isDark ? 'bg-slate-950 text-slate-100' : 'bg-slate-100 text-slate-900'
       }`}
     >
@@ -88,56 +92,80 @@ export default function Dashboard() {
       </header>
 
       {/* Main 3-column grid */}
-      <main className={`flex-1 grid grid-cols-1 lg:grid-cols-[280px_1fr_320px] min-h-0 bg-gradient-to-br ${scenarioBg[scenario]} transition-all duration-700`}>
+      <main className={`flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-[280px_1fr_320px] bg-gradient-to-br ${scenarioBg[scenario]} transition-all duration-700`}>
         {/* Left: Control Panel */}
-        <div className="lg:border-r border-slate-800/60 overflow-hidden">
+        <div className="min-h-0 h-full lg:border-r border-slate-800/60 overflow-hidden">
           <ControlPanel config={config} onSliderChange={setSlider} />
         </div>
 
-        {/* Center: Face + Scenario Selector */}
-        <div className="flex flex-col items-center justify-center gap-6 p-6 min-h-[400px]">
-          {/* Face viewport */}
-          <div className="relative w-full max-w-[380px] aspect-square flex items-center justify-center">
-            {/* Background ring glow */}
-            <div
-              className="absolute inset-0 rounded-full opacity-10 blur-3xl transition-colors duration-700"
-              style={{ background: `rgba(${animState.glowColor}, 0.6)` }}
-            />
-            <FaceCanvas
-              animState={animState}
-              isBlinking={isBlinking}
-              gazeOffset={gazeOffset}
-            />
+        {/* Center: face stays in the visible viewport; controls scroll below if needed */}
+        <div className="min-h-0 h-full flex flex-col overflow-hidden">
+          <div className="flex-1 min-h-0 flex items-center justify-center p-6">
+            <div className="relative w-full max-w-[300px] aspect-square flex items-center justify-center">
+              <motion.div
+                className="absolute inset-0 rounded-full blur-3xl transition-colors duration-700"
+                style={{ background: `rgba(${animState.glowColor}, 0.6)` }}
+                animate={{ opacity: [0.06, 0.16, 0.06] }}
+                transition={{
+                  duration: animState.idlePulseDuration,
+                  repeat: Infinity,
+                  ease: 'easeInOut',
+                }}
+              />
+              <FaceCanvas
+                animState={animState}
+                isBlinking={isBlinking}
+                gazeOffset={gazeOffset}
+              />
+            </div>
           </div>
 
-          {/* Live stats bar */}
-          <div className="flex flex-wrap justify-center gap-3 text-[11px] text-slate-500">
-            <span>
-              Blink interval:{' '}
-              <span className="text-slate-300 font-mono">{Math.round(animState.blinkInterval)}ms</span>
-            </span>
-            <span>
-              Gaze range:{' '}
-              <span className="text-slate-300 font-mono">±{Math.round(animState.gazeRange)}px</span>
-            </span>
-            <span>
-              Opacity:{' '}
-              <span className="text-slate-300 font-mono">{Math.round(animState.faceOpacity * 100)}%</span>
-            </span>
-            <span>
-              Glow:{' '}
-              <span className="text-slate-300 font-mono">{Math.round(animState.glowStrength)}px</span>
-            </span>
-          </div>
+          <div className="shrink-0 overflow-y-auto max-h-[42vh] border-t border-slate-800/40 px-6 pb-6 pt-4 space-y-4">
+            {/* Live stats bar */}
+            <div className="flex flex-wrap justify-center gap-3 text-[11px] text-slate-500">
+              <span>
+                Blink interval:{' '}
+                <span className="text-slate-300 font-mono">{Math.round(animState.blinkInterval)}ms</span>
+              </span>
+              <span>
+                Gaze range:{' '}
+                <span className="text-slate-300 font-mono">±{Math.round(animState.gazeRange * animState.gazeSteadiness)}px</span>
+              </span>
+              <span>
+                Opacity:{' '}
+                <span className="text-slate-300 font-mono">{Math.round(animState.faceOpacity * 100)}%</span>
+              </span>
+              <span>
+                Glow:{' '}
+                <span className="text-slate-300 font-mono">{Math.round(animState.glowStrength)}px</span>
+              </span>
+              <span>
+                Breathing pace:{' '}
+                <span className="text-slate-300 font-mono">{animState.idlePulseDuration.toFixed(1)}s</span>
+              </span>
+              <span>
+                Brow angle:{' '}
+                <span className="text-slate-300 font-mono">{Math.round(animState.browAngle)}°</span>
+              </span>
+            </div>
 
-          {/* Scenario selector */}
-          <div className="w-full max-w-[420px]">
-            <ScenarioSelector activeScenario={scenario} onSelect={handleScenarioSelect} />
+            <div className="w-full max-w-[420px] mx-auto">
+              <ScenarioSelector activeScenario={scenario} onSelect={handleScenarioSelect} />
+            </div>
+
+            <div className="w-full max-w-[420px] mx-auto">
+              <InteractionScenes
+                scenario={scenario}
+                eventPhase={eventPhase}
+                activeEventId={activeEventId}
+                onTrigger={triggerEvent}
+              />
+            </div>
           </div>
         </div>
 
         {/* Right: Ethical Analysis */}
-        <div className="lg:border-l border-slate-800/60 overflow-hidden border-t lg:border-t-0">
+        <div className="min-h-0 h-full lg:border-l border-slate-800/60 overflow-hidden border-t lg:border-t-0">
           <ScenarioAnalysis scenario={scenario} config={config} />
         </div>
       </main>

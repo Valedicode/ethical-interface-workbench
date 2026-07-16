@@ -5,10 +5,20 @@ import Eyes from './Eyes';
 import Mouth from './Mouth';
 import type { AnimState } from '@/lib/types';
 
+function lerp(a: number, b: number, t: number): number {
+  return a + (b - a) * t;
+}
+
 interface FaceCanvasProps {
   animState: AnimState;
   isBlinking: boolean;
   gazeOffset: { x: number; y: number };
+}
+
+function buildBrowPath(x1: number, y1: number, x2: number, y2: number, bendAmount: number): string {
+  const midX = (x1 + x2) / 2;
+  const midY = (y1 + y2) / 2 - bendAmount;
+  return `M ${x1} ${y1} Q ${midX} ${midY} ${x2} ${y2}`;
 }
 
 export default function FaceCanvas({ animState, isBlinking, gazeOffset }: FaceCanvasProps) {
@@ -19,13 +29,34 @@ export default function FaceCanvas({ animState, isBlinking, gazeOffset }: FaceCa
     strokeWeight,
     mouthCurvature,
     pupilScale,
+    browAngle,
+    eyeSizeScale,
+    eyeRoundness,
+    paletteHueShift,
+    mouthDetailLevel,
+    faceCornerSoftness,
+    cutenessLift,
+    asymmetryAmount,
   } = animState;
 
   const faceStroke = `rgba(${glowColor},0.8)`;
   const faceFill = `rgba(${glowColor},0.04)`;
+  const hueRotate = `hue-rotate(${paletteHueShift}deg)`;
   const filterStyle = glowStrength > 1
-    ? `drop-shadow(0 0 ${glowStrength}px rgba(${glowColor},0.55))`
-    : 'none';
+    ? `${hueRotate} drop-shadow(0 0 ${glowStrength}px rgba(${glowColor},0.55))`
+    : hueRotate;
+
+  // Softness widens/rounds the jaw; cuteness shortens the lower face —
+  // both read against the same base proportions used by the eyes/mouth.
+  const faceRx = 118 * lerp(0.92, 1.08, faceCornerSoftness);
+  const faceRy = 135 * lerp(1.06, 0.94, faceCornerSoftness) * lerp(1, 0.88, cutenessLift);
+
+  // Symmetry drives how differently the two brows curve/tilt from one another.
+  const browBend = lerp(6, 18, faceCornerSoftness);
+  const leftBrowPath = buildBrowPath(68, 95, 112, 90, browBend + asymmetryAmount * 0.4);
+  const rightBrowPath = buildBrowPath(188, 90, 232, 95, browBend - asymmetryAmount * 0.4);
+  const leftBrowRotate = browAngle + asymmetryAmount * 0.5;
+  const rightBrowRotate = -browAngle + asymmetryAmount * 0.5;
 
   return (
     <div className="flex items-center justify-center w-full h-full">
@@ -42,13 +73,15 @@ export default function FaceCanvas({ animState, isBlinking, gazeOffset }: FaceCa
         <motion.ellipse
           cx={150}
           cy={155}
-          rx={118}
-          ry={135}
+          rx={faceRx}
+          ry={faceRy}
           fill={faceFill}
           stroke={faceStroke}
           strokeWidth={strokeWeight}
           opacity={faceOpacity}
           animate={{
+            rx: faceRx,
+            ry: faceRy,
             fill: faceFill,
             stroke: faceStroke,
             strokeWidth: strokeWeight,
@@ -109,30 +142,38 @@ export default function FaceCanvas({ animState, isBlinking, gazeOffset }: FaceCa
           transition={{ duration: 0.6 }}
         />
 
-        {/* Eyebrow arcs */}
+        {/* Eyebrow arcs — angle encodes authority (soft/raised vs furrowed/stern);
+            curve encodes facial softness; the two sides differ slightly as
+            symmetry drops, so asymmetry is visible in the brows too. */}
         <motion.path
-          d="M 68 95 Q 90 82 112 90"
+          d={leftBrowPath}
           fill="none"
           stroke={`rgba(${glowColor},0.6)`}
           strokeWidth={strokeWeight * 0.9}
           strokeLinecap="round"
           opacity={faceOpacity}
+          style={{ originX: '112px', originY: '90px' }}
           animate={{
+            d: leftBrowPath,
             stroke: `rgba(${glowColor},0.6)`,
             opacity: faceOpacity,
+            rotate: leftBrowRotate,
           }}
           transition={{ duration: 0.5 }}
         />
         <motion.path
-          d="M 188 90 Q 210 82 232 95"
+          d={rightBrowPath}
           fill="none"
           stroke={`rgba(${glowColor},0.6)`}
           strokeWidth={strokeWeight * 0.9}
           strokeLinecap="round"
           opacity={faceOpacity}
+          style={{ originX: '188px', originY: '90px' }}
           animate={{
+            d: rightBrowPath,
             stroke: `rgba(${glowColor},0.6)`,
             opacity: faceOpacity,
+            rotate: rightBrowRotate,
           }}
           transition={{ duration: 0.5 }}
         />
@@ -145,6 +186,9 @@ export default function FaceCanvas({ animState, isBlinking, gazeOffset }: FaceCa
           glowColor={glowColor}
           strokeWeight={strokeWeight}
           faceOpacity={faceOpacity}
+          eyeSizeScale={eyeSizeScale}
+          eyeRoundness={eyeRoundness}
+          asymmetryAmount={asymmetryAmount}
         />
 
         {/* Mouth */}
@@ -153,6 +197,8 @@ export default function FaceCanvas({ animState, isBlinking, gazeOffset }: FaceCa
           glowColor={glowColor}
           strokeWeight={strokeWeight}
           faceOpacity={faceOpacity}
+          mouthDetailLevel={mouthDetailLevel}
+          asymmetryAmount={asymmetryAmount}
         />
 
         {/* Ear lines */}
