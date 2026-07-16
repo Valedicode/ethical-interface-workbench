@@ -1,7 +1,7 @@
 'use client';
 
 import { motion, AnimatePresence } from 'framer-motion';
-import { CheckCircle2, AlertTriangle, XCircle, ChevronRight } from 'lucide-react';
+import { CheckCircle2, AlertTriangle, XCircle, ChevronRight, ShieldAlert, Wrench, Users } from 'lucide-react';
 import type { ScenarioId, FaceConfig, ImpactLevel, PresetDefinition } from '@/lib/types';
 import { ETHICAL_PRESETS, SLIDER_META } from '@/lib/ethicalPresets';
 
@@ -70,7 +70,11 @@ export default function ScenarioAnalysis({ scenario, config }: ScenarioAnalysisP
         <h2 className="text-sm font-semibold text-slate-100 tracking-wide uppercase">
           Ethical Analysis
         </h2>
-        <p className="text-xs text-slate-500 mt-0.5 leading-relaxed">
+        <p className="text-xs text-slate-400 mt-1.5 leading-relaxed">
+          <span className="text-slate-300 font-medium">Use case: </span>
+          {preset.useCase}
+        </p>
+        <p className="text-xs text-slate-500 mt-1.5 leading-relaxed">
           {preset.description}
         </p>
       </div>
@@ -138,6 +142,47 @@ export default function ScenarioAnalysis({ scenario, config }: ScenarioAnalysisP
               </div>
             );
           })}
+
+          {/* Inclusion / exclusion note */}
+          <div className="rounded-lg bg-slate-800/50 border border-slate-700/50 p-3 space-y-1.5">
+            <div className="flex items-center gap-1.5">
+              <Users size={12} className="text-cyan-400" />
+              <span className="text-xs font-medium text-slate-200">Inclusion &amp; Exclusion</span>
+            </div>
+            <p className="text-[11px] text-slate-400 leading-relaxed">{preset.inclusionNote}</p>
+          </div>
+
+          {/* Risk analysis */}
+          <div className="rounded-lg bg-red-500/5 border border-red-500/25 p-3 space-y-1.5">
+            <div className="flex items-center gap-1.5">
+              <ShieldAlert size={12} className="text-red-400" />
+              <span className="text-xs font-medium text-slate-200">Risk Analysis</span>
+            </div>
+            <ul className="space-y-1.5">
+              {preset.risks.map((risk, i) => (
+                <li key={i} className="text-[11px] text-slate-400 leading-relaxed flex gap-1.5">
+                  <span className="text-red-400 shrink-0">•</span>
+                  <span>{risk}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Ethical redesign proposals */}
+          <div className="rounded-lg bg-emerald-500/5 border border-emerald-500/25 p-3 space-y-1.5 mb-2">
+            <div className="flex items-center gap-1.5">
+              <Wrench size={12} className="text-emerald-400" />
+              <span className="text-xs font-medium text-slate-200">Ethical Redesign Proposals</span>
+            </div>
+            <ul className="space-y-1.5">
+              {preset.redesigns.map((redesign, i) => (
+                <li key={i} className="text-[11px] text-slate-400 leading-relaxed flex gap-1.5">
+                  <span className="text-emerald-400 shrink-0">•</span>
+                  <span>{redesign}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
         </motion.div>
       </AnimatePresence>
     </aside>
