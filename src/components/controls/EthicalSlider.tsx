@@ -14,12 +14,14 @@ const trackColors: Record<string, string> = {
   Expression: 'accent-violet-400',
   Behavior: 'accent-cyan-400',
   Ethics: 'accent-emerald-400',
+  Visual: 'accent-rose-400',
 };
 
 const groupBadgeColors: Record<string, string> = {
   Expression: 'bg-violet-500/20 text-violet-300',
   Behavior: 'bg-cyan-500/20 text-cyan-300',
   Ethics: 'bg-emerald-500/20 text-emerald-300',
+  Visual: 'bg-rose-500/20 text-rose-300',
 };
 
 export default function EthicalSlider({ meta, value, onChange }: EthicalSliderProps) {

@@ -9,12 +9,13 @@ interface ControlPanelProps {
   onSliderChange: (key: keyof FaceConfig, value: number) => void;
 }
 
-const GROUPS = ['Expression', 'Behavior', 'Ethics'] as const;
+const GROUPS = ['Expression', 'Behavior', 'Ethics', 'Visual'] as const;
 
 const groupDescriptions: Record<string, string> = {
   Expression: 'How the face looks and signals emotion',
   Behavior: 'How the face moves and reacts',
   Ethics: 'How the AI relates to users\' rights and trust',
+  Visual: 'How the face is styled, statically',
 };
 
 export default function ControlPanel({ config, onSliderChange }: ControlPanelProps) {
@@ -24,7 +25,7 @@ export default function ControlPanel({ config, onSliderChange }: ControlPanelPro
         <h2 className="text-sm font-semibold text-slate-100 tracking-wide uppercase">
           Design Decisions
         </h2>
-        <p className="text-xs text-slate-500 mt-0.5">8 ethical dimensions</p>
+        <p className="text-xs text-slate-500 mt-0.5">15 ethical dimensions</p>
       </div>
 
       <div className="flex-1 overflow-y-auto px-4 pb-4 space-y-5 scrollbar-thin scrollbar-thumb-slate-600 scrollbar-track-transparent">
