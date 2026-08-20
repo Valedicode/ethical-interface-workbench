@@ -70,6 +70,30 @@ export interface AnimState {
   asymmetryAmount: number;    // 0 (perfectly symmetric) – up to ~6: px/degree offset applied per side
 }
 
+// --- Live webcam face tracking ---
+
+export type TrackingMode = 'manual' | 'live';
+
+/** A face's position in the video frame, normalized to 0–1 (top-left origin). */
+export interface FacePosition {
+  x: number;
+  y: number;
+}
+
+/**
+ * Live-tracking-derived values that override the corresponding piece of the
+ * autonomous/slider-derived animation state when tracking mode is active.
+ * Mirrors the existing `gazeOverride` pattern in `useFaceState` — undefined
+ * fields fall through to the baseline (slider-derived or autonomous) value.
+ *
+ * Live mode tracks the viewer's face position and steers the rig's gaze
+ * toward it (rather than mimicking expressions), so the only override is
+ * the pupils' offset.
+ */
+export interface TrackingOverride {
+  gazeOffset?: { x: number; y: number };
+}
+
 export type SliderKey = keyof FaceConfig;
 
 export interface SliderMeta {

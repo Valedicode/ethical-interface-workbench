@@ -1,14 +1,19 @@
 'use client';
 
+import { useEffect } from 'react';
 import { Moon, Sun, Cpu } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useFaceState } from '@/hooks/useFaceState';
+import { useFaceTracking } from '@/hooks/useFaceTracking';
 import { ETHICAL_PRESETS } from '@/lib/ethicalPresets';
+import { mapFacePositionToGazeOverride } from '@/lib/faceTracking/mapping';
 import FaceCanvas from '@/components/face/FaceCanvas';
 import ControlPanel from '@/components/controls/ControlPanel';
 import ScenarioSelector from '@/components/scenarios/ScenarioSelector';
 import ScenarioAnalysis from '@/components/scenarios/ScenarioAnalysis';
 import InteractionScenes from '@/components/scenarios/InteractionScenes';
+import ModeToggle from '@/components/tracking/ModeToggle';
+import WebcamPreview from '@/components/tracking/WebcamPreview';
 import type { ScenarioId } from '@/lib/types';
 
 export default function Dashboard() {
@@ -21,11 +26,27 @@ export default function Dashboard() {
     gazeOffset,
     eventPhase,
     activeEventId,
+    mode,
     setSlider,
     loadPreset,
     toggleDark,
     triggerEvent,
+    setMode,
+    setTrackingOverride,
   } = useFaceState();
+
+  const isLive = mode === 'live';
+  const { videoRef, webcamStatus, webcamError, isModelLoading, modelError, facePosition } =
+    useFaceTracking(isLive);
+
+  // Push the latest tracking-derived gaze offset into the same state that
+  // otherwise powers the manual sliders/autonomous gaze loop — no parallel
+  // state system. The rig tracks and looks toward the viewer's face rather
+  // than mimicking their expression.
+  useEffect(() => {
+    if (!isLive) return;
+    setTrackingOverride(facePosition ? mapFacePositionToGazeOverride(facePosition) : null);
+  }, [isLive, facePosition, setTrackingOverride]);
 
   function handleScenarioSelect(id: ScenarioId) {
     const preset = ETHICAL_PRESETS.find((p) => p.id === id);
@@ -59,6 +80,8 @@ export default function Dashboard() {
         </div>
 
         <div className="flex items-center gap-3">
+          <ModeToggle mode={mode} onChange={setMode} />
+
           {/* Scenario indicator badge */}
           <AnimatePresence mode="wait">
             <motion.div
@@ -117,6 +140,16 @@ export default function Dashboard() {
                 isBlinking={isBlinking}
                 gazeOffset={gazeOffset}
               />
+
+              {isLive && (
+                <WebcamPreview
+                  videoRef={videoRef}
+                  webcamStatus={webcamStatus}
+                  webcamError={webcamError}
+                  isModelLoading={isModelLoading}
+                  modelError={modelError}
+                />
+              )}
             </div>
           </div>
 
