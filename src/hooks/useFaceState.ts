@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import type { FaceConfig, AnimState, ScenarioId, EventType } from '@/lib/types';
+import type { FaceConfig, AnimState, ScenarioId, EventType, TrackingMode, TrackingOverride } from '@/lib/types';
 import { DEFAULT_CONFIG } from '@/lib/ethicalPresets';
 
 function lerp(a: number, b: number, t: number): number {
@@ -83,10 +83,13 @@ interface UseFaceStateReturn {
   gazeOffset: { x: number; y: number };
   eventPhase: EventPhase;
   activeEventId: string | null;
+  mode: TrackingMode;
   setSlider: (key: keyof FaceConfig, value: number) => void;
   loadPreset: (scenario: ScenarioId, presetConfig: FaceConfig) => void;
   toggleDark: () => void;
   triggerEvent: (eventId: string, type: EventType) => void;
+  setMode: (mode: TrackingMode) => void;
+  setTrackingOverride: (override: TrackingOverride | null) => void;
 }
 
 export function useFaceState(): UseFaceStateReturn {
@@ -100,6 +103,13 @@ export function useFaceState(): UseFaceStateReturn {
   const [eventType, setEventType] = useState<EventType | null>(null);
   const [activeEventId, setActiveEventId] = useState<string | null>(null);
   const [gazeOverride, setGazeOverride] = useState<{ x: number; y: number } | null>(null);
+
+  // Live webcam tracking mode: when active, `trackingOverride` supplies a
+  // gaze offset captured from the camera — the rig tracks and looks toward
+  // the viewer instead of mimicking them, layered on the same `gazeOffset`
+  // the autonomous wandering loop otherwise fully controls.
+  const [mode, setMode] = useState<TrackingMode>('manual');
+  const [trackingOverride, setTrackingOverride] = useState<TrackingOverride | null>(null);
 
   const baseAnim = deriveAnimState(config, scenario);
 
@@ -197,6 +207,11 @@ export function useFaceState(): UseFaceStateReturn {
     setIsDark((prev) => !prev);
   }, []);
 
+  const handleSetMode = useCallback((newMode: TrackingMode) => {
+    setMode(newMode);
+    if (newMode === 'manual') setTrackingOverride(null);
+  }, []);
+
   const triggerEvent = useCallback((eventId: string, type: EventType) => {
     eventTimersRef.current.forEach(clearTimeout);
     eventTimersRef.current = [];
@@ -229,18 +244,23 @@ export function useFaceState(): UseFaceStateReturn {
     eventTimersRef.current.push(t1);
   }, [config.responseLatency]);
 
+  const liveGazeOffset = mode === 'live' ? trackingOverride?.gazeOffset : undefined;
+
   return {
     config,
     animState,
     scenario,
     isDark,
     isBlinking,
-    gazeOffset: gazeOverride ?? gazeOffset,
+    gazeOffset: liveGazeOffset ?? gazeOverride ?? gazeOffset,
     eventPhase,
     activeEventId,
+    mode,
     setSlider,
     loadPreset,
     toggleDark,
     triggerEvent,
+    setMode: handleSetMode,
+    setTrackingOverride,
   };
 }
